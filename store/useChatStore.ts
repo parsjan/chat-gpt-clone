@@ -82,14 +82,14 @@ export const useChatStore = create<ChatState>()(
           })),
         updateLastMessage: (content) =>
           set((state) => {
-            const messages = [...state.messages]
+            const messages = [...state.messages];
             if (messages.length > 0) {
               messages[messages.length - 1] = {
                 ...messages[messages.length - 1],
                 content,
-              }
+              };
             }
-            return { messages }
+            return { messages };
           }),
         setInput: (input) => set({ input }),
         setIsLoading: (isLoading) => set({ isLoading }),
@@ -115,7 +115,9 @@ export const useChatStore = create<ChatState>()(
           })),
         updateChat: (chatId, updates) =>
           set((state) => ({
-            chats: state.chats.map((chat) => (chat.id === chatId ? { ...chat, ...updates } : chat)),
+            chats: state.chats.map((chat) =>
+              chat.id === chatId ? { ...chat, ...updates } : chat
+            ),
           })),
         removeChat: (chatId) =>
           set((state) => ({
@@ -125,54 +127,55 @@ export const useChatStore = create<ChatState>()(
         // API actions
         createNewChat: async (firstMessage) => {
           try {
-            set({ isLoading: true, error: null })
+            set({ isLoading: true, error: null });
 
             const response = await fetch("/api/chat/new", {
               method: "POST",
               headers: { "Content-Type": "application/json" },
               body: JSON.stringify({ firstMessage }),
-            })
+            });
 
             if (!response.ok) {
-              throw new Error("Failed to create new chat")
+              throw new Error("Failed to create new chat");
             }
 
-            const { chatId, title } = await response.json()
-            const userId=useUserStore.getState().userId
+            const { chatId, title } = await response.json();
+            const userId = useUserStore.getState().userId;
 
             // Add new chat to history
             const newChat: Chat = {
               id: chatId,
               title,
-              userId:userId===null?"":userId,
+              userId: userId === null ? "" : userId,
               messages: [],
               createdAt: new Date(),
               updatedAt: new Date(),
             };
 
-            get().addChat(newChat)
-            set({ currentChatId: chatId, messages: [] })
+            get().addChat(newChat);
+            set({ currentChatId: chatId, messages: [] });
 
-            return chatId
+            return chatId;
           } catch (error) {
-            const errorMessage = error instanceof Error ? error.message : "Unknown error"
-            set({ error: errorMessage })
-            throw error
+            const errorMessage =
+              error instanceof Error ? error.message : "Unknown error";
+            set({ error: errorMessage });
+            throw error;
           } finally {
-            set({ isLoading: false })
+            set({ isLoading: false });
           }
         },
 
         sendMessage: async (content) => {
-          const { currentChatId, attachments, messages } = get()
+          const { currentChatId, attachments, messages } = get();
 
           try {
-            set({ isLoading: true, isStreaming: true, error: null })
+            set({ isLoading: true, isStreaming: true, error: null });
 
             // Create new chat if none exists
-            let chatId = currentChatId
+            let chatId = currentChatId;
             if (!chatId) {
-              chatId = await get().createNewChat(content)
+              chatId = await get().createNewChat(content);
             }
 
             // Add user message optimistically
@@ -182,11 +185,11 @@ export const useChatStore = create<ChatState>()(
               content,
               timestamp: new Date(),
               attachments: attachments.length > 0 ? attachments : undefined,
-            }
+            };
 
-            get().addMessage(userMessage)
-            get().clearAttachments()
-            set({ input: "" })
+            get().addMessage(userMessage);
+            get().clearAttachments();
+            set({ input: "" });
 
             // Send to API
             const response = await fetch("/api/chat", {
@@ -197,100 +200,96 @@ export const useChatStore = create<ChatState>()(
                 chatId,
                 attachments,
               }),
-            })
+            });
+            console.log("response ai", response);
 
             if (!response.ok) {
-              throw new Error("Failed to send message")
+              throw new Error("Failed to send message");
             }
 
             // Handle streaming response
-            const reader = response.body?.getReader()
-            if (!reader) throw new Error("No response body")
+            const reader = response.body?.getReader();
+            if (!reader) throw new Error("No response body");
 
+            // Add assistant message placeholder
             const assistantMessage: Message = {
               id: (Date.now() + 1).toString(),
               role: "assistant",
               content: "",
               timestamp: new Date(),
-            }
+            };
+            get().addMessage(assistantMessage);
 
-            get().addMessage(assistantMessage)
-
-            const decoder = new TextDecoder()
-            let buffer = ""
+            const decoder = new TextDecoder();
 
             while (true) {
-              const { done, value } = await reader.read()
-              if (done) break
+              const { done, value } = await reader.read();
+              if (done) break;
 
-              buffer += decoder.decode(value, { stream: true })
-              const lines = buffer.split("\n")
-              buffer = lines.pop() || ""
+              const chunk = decoder.decode(value, { stream: true });
+              console.log("chunk received:", chunk);
 
-              for (const line of lines) {
-                if (line.startsWith("data: ")) {
-                  const data = line.slice(6)
-                  if (data === "[DONE]") continue
+              // ✅ Update assistant message in Zustand directly
+              set((state) => {
+                const updatedMessages = [...state.messages];
+                const lastMsg = updatedMessages[updatedMessages.length - 1];
 
-                  try {
-                    const parsed = JSON.parse(data)
-                    if (parsed.choices?.[0]?.delta?.content) {
-                      assistantMessage.content += parsed.choices[0].delta.content
-                      get().updateLastMessage(assistantMessage.content)
-                    }
-                  } catch (e) {
-                    // Ignore parsing errors for streaming data
-                  }
+                if (lastMsg?.role === "assistant") {
+                  lastMsg.content += chunk;
                 }
-              }
+
+                return { messages: updatedMessages };
+              });
             }
           } catch (error) {
-            const errorMessage = error instanceof Error ? error.message : "Unknown error"
-            set({ error: errorMessage })
-            throw error
+            const errorMessage =
+              error instanceof Error ? error.message : "Unknown error";
+            set({ error: errorMessage });
+            throw error;
           } finally {
-            set({ isLoading: false, isStreaming: false })
+            set({ isLoading: false, isStreaming: false });
           }
         },
-
         loadChatHistory: async () => {
           try {
-            set({ isLoadingHistory: true, error: null })
+            set({ isLoadingHistory: true, error: null });
 
-            const response = await fetch("/api/chat/history")
+            const response = await fetch("/api/chat/history");
             if (!response.ok) {
-              throw new Error("Failed to load chat history")
+              throw new Error("Failed to load chat history");
             }
 
-            const { chats } = await response.json()
-            set({ chats })
+            const { chats } = await response.json();
+            set({ chats });
           } catch (error) {
-            const errorMessage = error instanceof Error ? error.message : "Unknown error"
-            set({ error: errorMessage })
+            const errorMessage =
+              error instanceof Error ? error.message : "Unknown error";
+            set({ error: errorMessage });
           } finally {
-            set({ isLoadingHistory: false })
+            set({ isLoadingHistory: false });
           }
         },
 
         loadChat: async (chatId) => {
           try {
-            set({ isLoading: true, error: null })
+            set({ isLoading: true, error: null });
 
-            const response = await fetch(`/api/chat/${chatId}`)
+            const response = await fetch(`/api/chat/${chatId}`);
             if (!response.ok) {
-              throw new Error("Failed to load chat")
+              throw new Error("Failed to load chat");
             }
 
-            const { chat } = await response.json()
+            const { chat } = await response.json();
             set({
               currentChatId: chatId,
               messages: chat.messages || [],
-            })
+            });
           } catch (error) {
-            const errorMessage = error instanceof Error ? error.message : "Unknown error"
-            set({ error: errorMessage })
+            const errorMessage =
+              error instanceof Error ? error.message : "Unknown error";
+            set({ error: errorMessage });
           } finally {
-            set({ isLoading: false })
+            set({ isLoading: false });
           }
         },
 
@@ -298,22 +297,23 @@ export const useChatStore = create<ChatState>()(
           try {
             const response = await fetch(`/api/chat/${chatId}`, {
               method: "DELETE",
-            })
+            });
 
             if (!response.ok) {
-              throw new Error("Failed to delete chat")
+              throw new Error("Failed to delete chat");
             }
 
-            get().removeChat(chatId)
+            get().removeChat(chatId);
 
             // Reset current chat if it was deleted
             if (get().currentChatId === chatId) {
-              get().resetCurrentChat()
+              get().resetCurrentChat();
             }
           } catch (error) {
-            const errorMessage = error instanceof Error ? error.message : "Unknown error"
-            set({ error: errorMessage })
-            throw error
+            const errorMessage =
+              error instanceof Error ? error.message : "Unknown error";
+            set({ error: errorMessage });
+            throw error;
           }
         },
 
@@ -323,17 +323,18 @@ export const useChatStore = create<ChatState>()(
               method: "PATCH",
               headers: { "Content-Type": "application/json" },
               body: JSON.stringify({ title }),
-            })
+            });
 
             if (!response.ok) {
-              throw new Error("Failed to update chat title")
+              throw new Error("Failed to update chat title");
             }
 
-            get().updateChat(chatId, { title })
+            get().updateChat(chatId, { title });
           } catch (error) {
-            const errorMessage = error instanceof Error ? error.message : "Unknown error"
-            set({ error: errorMessage })
-            throw error
+            const errorMessage =
+              error instanceof Error ? error.message : "Unknown error";
+            set({ error: errorMessage });
+            throw error;
           }
         },
 
@@ -354,11 +355,11 @@ export const useChatStore = create<ChatState>()(
           chats: state.chats,
           currentChatId: state.currentChatId,
         }),
-      },
+      }
     ),
-    { name: "chat-store" },
-  ),
-)
+    { name: "chat-store" }
+  )
+);
 
 // Selectors for optimized re-renders
 export const useChatMessages = () => useChatStore((state) => state.messages)

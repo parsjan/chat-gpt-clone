@@ -37,7 +37,7 @@ const aiModel = getProviderClient();
 // ✅ Stream AI responses (chat-like)
 export async function generateAIResponse(messages: any[]) {
   try {
-    return await streamText({
+    return streamText({
       model: aiModel,
       messages,
       temperature: 0.7,

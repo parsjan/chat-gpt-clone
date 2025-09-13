@@ -20,6 +20,7 @@ class Mem0Client {
   private baseUrl: string
 
   constructor(config: MemoryConfig) {
+    console.log("cnfig",config.apiKey);
     this.apiKey = config.apiKey
     this.baseUrl = config.baseUrl || "https://api.mem0.ai"
   }
@@ -156,58 +157,97 @@ class Mem0Client {
 }
 
 export const memoryClient = new Mem0Client({
-  apiKey: process.env.MEM0_API_KEY || "",
-})
+  apiKey: process.env.NEXT_PUBLIC_MEM0_API_KEY || "",
+});
 
 // Enhanced memory management utilities
 export class MemoryManager {
-  static async addConversationMemory(messages: any[], userId: string, chatId: string, metadata?: Record<string, any>) {
+  static async addConversationMemory(
+    messages: any[],
+    userId: string,
+    chatId: string,
+    metadata?: Record<string, any>
+  ) {
     // Filter and prepare messages for memory storage
-    const relevantMessages = messages.filter((msg) => msg.role !== "system").slice(-10) // Keep last 10 messages for context
+    const relevantMessages = messages
+      .filter((msg) => msg.role !== "system")
+      .slice(-10); // Keep last 10 messages for context
 
     return await memoryClient.add(relevantMessages, userId, {
       chatId,
       messageCount: messages.length,
       ...metadata,
-    })
+    });
   }
 
-  static async getRelevantContext(query: string, userId: string, limit = 3): Promise<string> {
-    const memories = await memoryClient.search(query, userId, limit)
+  // static async getRelevantContext(query: string, userId: string, limit = 3): Promise<string> {
+  //   const memories = await memoryClient.search(query, userId, limit)
 
-    if (!memories.results || memories.results.length === 0) {
-      return ""
+  //   if (!memories.results || memories.results.length === 0) {
+  //     return ""
+  //   }
+
+  //   const contextItems = memories.results
+  //     .filter((memory) => memory.score > 0.7) // Only high-relevance memories
+  //     .map((memory) => `- ${memory.memory}`)
+  //     .slice(0, limit)
+
+  //   if (contextItems.length === 0) {
+  //     return ""
+  //   }
+
+  //   return `\n\nRelevant context from previous conversations:\n${contextItems.join("\n")}`
+  // }
+
+  static async getRelevantContext(
+    userId: string,
+    history: { role: string; content: string }[]
+  ) {
+    try {
+      const response = await memoryClient.search(userId, "recent chat",5);
+
+      const results = response?.results ?? [];
+
+      if (results.length > 0) {
+        return results
+      }
+
+      // ✅ fallback to last 5 message contents (guaranteed string[])
+      return history.slice(-5).map((m) => m.content);
+    } catch (err) {
+      console.error("⚠️ Mem0 failed, using fallback:", err);
+
+      // ✅ also fallback here
+      return history.slice(-5).map((m) => m.content);
     }
-
-    const contextItems = memories.results
-      .filter((memory) => memory.score > 0.7) // Only high-relevance memories
-      .map((memory) => `- ${memory.memory}`)
-      .slice(0, limit)
-
-    if (contextItems.length === 0) {
-      return ""
-    }
-
-    return `\n\nRelevant context from previous conversations:\n${contextItems.join("\n")}`
   }
 
   static async summarizeConversation(messages: any[]): Promise<string> {
     // Create a summary of the conversation for memory storage
-    const userMessages = messages.filter((msg) => msg.role === "user")
-    const assistantMessages = messages.filter((msg) => msg.role === "assistant")
+    const userMessages = messages.filter((msg) => msg.role === "user");
+    const assistantMessages = messages.filter(
+      (msg) => msg.role === "assistant"
+    );
 
-    if (userMessages.length === 0) return ""
+    if (userMessages.length === 0) return "";
 
-    const topics = userMessages.map((msg) => msg.content.slice(0, 100)).join("; ")
-    const summary = `Conversation about: ${topics}. ${userMessages.length} user messages, ${assistantMessages.length} assistant responses.`
+    const topics = userMessages
+      .map((msg) => msg.content.slice(0, 100))
+      .join("; ");
+    const summary = `Conversation about: ${topics}. ${userMessages.length} user messages, ${assistantMessages.length} assistant responses.`;
 
-    return summary
+    return summary;
   }
 
-  static async cleanupOldMemories(userId: string, daysOld = 30): Promise<number> {
+  static async cleanupOldMemories(
+    userId: string,
+    daysOld = 30
+  ): Promise<number> {
     // This would require additional API endpoints from mem0
     // For now, we'll implement a placeholder
-    console.log(`Cleanup requested for memories older than ${daysOld} days for user ${userId}`)
-    return 0
+    console.log(
+      `Cleanup requested for memories older than ${daysOld} days for user ${userId}`
+    );
+    return 0;
   }
 }
