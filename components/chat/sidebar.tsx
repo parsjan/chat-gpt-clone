@@ -67,11 +67,11 @@ export function Sidebar({ onClose, currentChatId }: SidebarProps) {
       {/* Header */}
       <div className="flex items-center justify-between p-4 border-b border-sidebar-border">
         <h2 className="text-lg font-semibold text-sidebar-foreground">ChatGPT</h2>
-        {onClose && (
-          <Button variant="ghost" size="sm" onClick={onClose}>
+        {/* {onClose && (
+          <Button variant="ghost" size="sm" onClick={()=>onClose()}>
             <X className="h-4 w-4" />
           </Button>
-        )}
+        )} */}
       </div>
 
       {/* New Chat Button */}
