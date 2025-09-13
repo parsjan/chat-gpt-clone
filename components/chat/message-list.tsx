@@ -10,6 +10,7 @@ interface MessageListProps {
 }
 
 export function MessageList({ messages, isLoading }: MessageListProps) {
+  console.log(messages,"messages in frontend ");
   return (
     <div className="space-y-6 py-4">
       {messages.map((message) => (
