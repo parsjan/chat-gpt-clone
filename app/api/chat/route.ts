@@ -3,18 +3,17 @@ import { auth } from "@clerk/nextjs/server";
 import connectToDatabase from "@/lib/mongoose";
 import { Chat } from "@/models";
 import { generateAIResponse } from "@/lib/ai";
+import { randomUUID } from "crypto"; // for unique message IDs
 
-// 🔹 Custom Context Creator
 function buildCustomContext(
   messages: { role: string; content: string }[],
   attachments: { name: string; type: string }[] = []
 ): string {
   let context = "";
 
-  // 1. Last few messages (conversation context)
   const lastFewMessages = messages
     .filter((m) => m.role === "user")
-    .slice(-3) // take last 3 user messages
+    .slice(-3)
     .map((m) => `- ${m.content}`)
     .join("\n");
 
@@ -22,7 +21,6 @@ function buildCustomContext(
     context += `\n\nRecent conversation context:\n${lastFewMessages}`;
   }
 
-  // 2. Attachments
   if (attachments.length > 0) {
     const attachmentContext = attachments
       .map((file) => `- ${file.name} (${file.type})`)
@@ -48,10 +46,10 @@ export async function POST(req: NextRequest) {
 
     await connectToDatabase();
 
-    // 🔹 Build custom context
+    // Build custom context
     const context = buildCustomContext(messages, attachments);
 
-    // 🔹 Merge context into last user message
+    // Merge context into last user message
     const contextualMessages = [...messages];
     if (context && contextualMessages.length > 0) {
       const lastMessage = contextualMessages[contextualMessages.length - 1];
@@ -60,10 +58,53 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // 🔹 Stream AI response (from dynamic provider)
+    // Generate AI response (streaming)
     const result = await generateAIResponse(contextualMessages);
 
-    return result.toTextStreamResponse();
+    let fullResponse = "";
+
+    const stream = new ReadableStream({
+      async start(controller) {
+        for await (const delta of result.textStream) {
+          fullResponse += delta;
+          controller.enqueue(new TextEncoder().encode(delta));
+        }
+
+        // ✅ Once streaming is done, save both messages to DB
+        const userMessage = messages[messages.length - 1];
+
+        await Chat.findOneAndUpdate(
+          { id: chatId, userId },
+          {
+            $push: {
+              messages: [
+                {
+                  id: userMessage.id || randomUUID(),
+                  role: "user",
+                  content: userMessage.content,
+                  timestamp: new Date(),
+                  attachments: userMessage.attachments || [],
+                },
+                {
+                  id: randomUUID(),
+                  role: "assistant",
+                  content: fullResponse,
+                  timestamp: new Date(),
+                },
+              ],
+            },
+            $inc: { "metadata.messageCount": 2 },
+          },
+          { upsert: true, new: true }
+        );
+
+        controller.close();
+      },
+    });
+
+    return new Response(stream, {
+      headers: { "Content-Type": "text/plain; charset=utf-8" },
+    });
   } catch (error) {
     console.error("Chat API error:", error);
     return new Response("Internal Server Error", { status: 500 });

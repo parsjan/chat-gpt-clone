@@ -11,7 +11,7 @@ export const swaggerConfig = {
   },
   servers: [
     {
-      url: process.env.NODE_ENV === "production" ? "https://your-domain.com" : "http://localhost:3000",
+      url: process.env.NODE_ENV === "production" ? "https://galxy.vercel.app" : "http://localhost:3000",
       description: process.env.NODE_ENV === "production" ? "Production server" : "Development server",
     },
   ],

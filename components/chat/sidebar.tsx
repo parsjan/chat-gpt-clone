@@ -21,7 +21,7 @@ export function Sidebar({ onClose, currentChatId }: SidebarProps) {
   const [editingId, setEditingId] = useState<string | null>(null)
   const [editTitle, setEditTitle] = useState("")
   const router = useRouter()
-
+  // console.log(chats,"chat history");
   useEffect(() => {
     loadChatHistory()
   }, [loadChatHistory])

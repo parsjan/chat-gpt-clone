@@ -74,7 +74,7 @@ export function MessageInput({
   }
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-3 ">
       {/* Attachments */}
       {attachments.length > 0 && (
         <div className="flex flex-wrap gap-2">
@@ -91,8 +91,8 @@ export function MessageInput({
       )}
 
       {/* Input form */}
-      <form onSubmit={handleSubmit} className="relative">
-        <div className="relative flex items-end gap-2 p-3 border border-border rounded-2xl focus-within:border-ring">
+      <form onSubmit={handleSubmit} className="relative ">
+        <div className="relative flex items-end gap-2 p-3 border border-border rounded-full focus-within:border-ring">
           <FileUploadWidget
             onFileUploaded={handleFileUploaded}
             disabled={disabled}
@@ -112,7 +112,7 @@ export function MessageInput({
             type="submit"
             size="sm"
             className={cn(
-              "flex-shrink-0 rounded-lg",
+              "flex-shrink-0 rounded-full",
               (value.trim() || attachments.length > 0) && !disabled
                 ? "bg-primary hover:bg-primary/90"
                 : "bg-muted-foreground/80"
@@ -123,7 +123,7 @@ export function MessageInput({
           </Button>
         </div>
 
-        <p className="text-xs text-muted-foreground text-center mt-2">
+        <p className="text-xs text-muted-foreground text-center mt-4 mb-4">
           ChatGPT can make mistakes. Check important info.
         </p>
       </form>

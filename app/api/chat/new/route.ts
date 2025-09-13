@@ -14,7 +14,7 @@ export async function POST(req: NextRequest) {
 
     const { firstMessage } = await req.json()
 
-    // await connectToDatabase()
+    await connectToDatabase()
 
     // Generate a title for the chat
     const title = firstMessage ? await generateTitle(firstMessage) : "New Chat"
@@ -33,7 +33,7 @@ export async function POST(req: NextRequest) {
       },
     })
 
-    // await newChat.save()
+    await newChat.save()
 
     return Response.json({ chatId, title })
   } catch (error) {

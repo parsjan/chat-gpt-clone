@@ -16,10 +16,10 @@ export default async function ChatPage({ params }: ChatPageProps) {
   // Verify chat exists and belongs to user
   const db = await getDatabase()
   const chat = await db.collection("chats").findOne({ id: chatId, userId })
-
-  if (!chat) {
-    notFound()
-  }
+  // console.log(chatId,userId,chat,"db check");
+  // if (!chat) {
+  //   notFound()
+  // }
 
   return <ChatLayout chatId={chatId} />
 }
