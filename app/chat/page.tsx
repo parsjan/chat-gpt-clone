@@ -1,3 +1,4 @@
+
 import { requireAuth } from "@/lib/auth"
 import { ChatLayout } from "@/components/chat/chat-layout"
 
