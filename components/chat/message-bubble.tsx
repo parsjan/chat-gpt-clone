@@ -13,10 +13,26 @@ interface MessageBubbleProps {
 
 export function MessageBubble({ message }: MessageBubbleProps) {
   const [isHovered, setIsHovered] = useState(false);
+    const [liked, setLiked] = useState(false);
+    const [disliked, setDisliked] = useState(false);
+    const [copied, setCopied] = useState(false);
+
 
   const handleCopy = () => {
     navigator.clipboard.writeText(message.content);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 1000); 
   };
+
+  const handleLike = ()=>{
+    setLiked(true)
+    setTimeout(() => setLiked(false), 1000); 
+  }
+
+  const handleUnlike =()=>{
+    setDisliked(true);
+    setTimeout(() => setDisliked(false), 1000); 
+  }
 
   const handleEdit = () => {
     console.log("Edit message:", message.id);
@@ -74,14 +90,14 @@ export function MessageBubble({ message }: MessageBubbleProps) {
             >
               <Copy className="h-3 w-3" />
             </Button>
-            <Button
+            {/* <Button
               variant="ghost"
               size="sm"
               onClick={handleEdit}
               className="h-8 px-2"
             >
               <Edit3 className="h-3 w-3" />
-            </Button>
+            </Button> */}
           </div>
         )}
 
@@ -93,21 +109,33 @@ export function MessageBubble({ message }: MessageBubbleProps) {
               onClick={handleCopy}
               className="h-8 px-2"
             >
-              <Copy className="h-3 w-3" />
+              <Copy
+                className="h-3 w-3"
+                fill={copied ? "currentColor" : "none"}
+                stroke="currentColor"
+              />
             </Button>
-            <Button
+            {/* <Button
               variant="ghost"
               size="sm"
               onClick={handleRegenerate}
               className="h-8 px-2"
             >
               <RotateCcw className="h-3 w-3" />
+            </Button> */}
+            <Button variant="ghost" size="sm" className="h-8 px-2" onClick={()=>handleLike()}>
+              <ThumbsUp
+                className="h-3 w-3"
+                fill={liked ? "currentColor" : "none"}
+                stroke="currentColor"
+              />
             </Button>
-            <Button variant="ghost" size="sm" className="h-8 px-2">
-              <ThumbsUp className="h-3 w-3" />
-            </Button>
-            <Button variant="ghost" size="sm" className="h-8 px-2">
-              <ThumbsDown className="h-3 w-3" />
+            <Button variant="ghost" size="sm" className="h-8 px-2" onClick={()=>handleUnlike()}>
+              <ThumbsDown
+                className="h-3 w-3"
+                fill={disliked ? "currentColor" : "none"}
+                stroke="currentColor"
+              />
             </Button>
           </div>
         )}
