@@ -9,7 +9,7 @@ cloudinary.config({
 export async function uploadToCloudinary(fileUrl: string, fileName: string) {
   try {
     const result = await cloudinary.uploader.upload(fileUrl, {
-      resource_type: "auto",
+      resource_type: "raw",
       public_id: `chatgpt-clone/${Date.now()}-${fileName}`,
       folder: "chatgpt-clone",
     })

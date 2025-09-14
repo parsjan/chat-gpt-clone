@@ -15,18 +15,17 @@ export function ChatLayout({ chatId }: ChatLayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
 
-  useEffect(() => {
-    const checkMobile = () => {
-      setIsMobile(window.innerWidth < 768);
-      if (window.innerWidth >= 768) {
-        setSidebarOpen(true);
-      }
-    };
+useEffect(() => {
+  const checkMobile = () => {
+    const mobile = window.innerWidth < 800; // updated threshold
+    setIsMobile(mobile);
+    setSidebarOpen(!mobile); // close sidebar if mobile, open if desktop
+  };
 
-    checkMobile();
-    window.addEventListener("resize", checkMobile);
-    return () => window.removeEventListener("resize", checkMobile);
-  }, []);
+  checkMobile();
+  window.addEventListener("resize", checkMobile);
+  return () => window.removeEventListener("resize", checkMobile);
+}, []);
 
   return (
     <div className="h-screen bg-background flex">

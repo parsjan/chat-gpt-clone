@@ -229,7 +229,7 @@ export const useChatStore = create<ChatState>()(
               const chunk = decoder.decode(value, { stream: true });
               console.log("chunk received:", chunk);
 
-              // ✅ Update assistant message in Zustand directly
+              //  Update assistant message in Zustand directly
               set((state) => {
                 const updatedMessages = [...state.messages];
                 const lastMsg = updatedMessages[updatedMessages.length - 1];

@@ -1,5 +1,5 @@
 "use client";
-
+import ReactMarkdown from "react-markdown";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Copy, Edit3, RotateCcw, ThumbsUp, ThumbsDown } from "lucide-react";
@@ -73,9 +73,9 @@ export function MessageBubble({ message }: MessageBubbleProps) {
                 : "text-left"
             )}
           >
-            <p className="text-foreground leading-relaxed whitespace-pre-wrap">
+            <ReactMarkdown>
               {message.content}
-            </p>
+            </ReactMarkdown>
           </div>
         )}
 
@@ -123,14 +123,24 @@ export function MessageBubble({ message }: MessageBubbleProps) {
             >
               <RotateCcw className="h-3 w-3" />
             </Button> */}
-            <Button variant="ghost" size="sm" className="h-8 px-2" onClick={()=>handleLike()}>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-8 px-2"
+              onClick={() => handleLike()}
+            >
               <ThumbsUp
                 className="h-3 w-3"
                 fill={liked ? "currentColor" : "none"}
                 stroke="currentColor"
               />
             </Button>
-            <Button variant="ghost" size="sm" className="h-8 px-2" onClick={()=>handleUnlike()}>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-8 px-2"
+              onClick={() => handleUnlike()}
+            >
               <ThumbsDown
                 className="h-3 w-3"
                 fill={disliked ? "currentColor" : "none"}
